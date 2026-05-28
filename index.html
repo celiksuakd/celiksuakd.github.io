@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>POLIMI · CHEMENG STUDY ARCADE</title>
+<style>
+  :root {
+    --bg: #07090f;
+    --bg2: #0e1320;
+    --card: #131a2c;
+    --card2: #1a2340;
+    --text: #e6f1ff;
+    --muted: #6b7a99;
+    --accent: #00ff9f;
+    --accent2: #00d9ff;
+    --danger: #ff3860;
+    --warn: #ffb800;
+    --locked: #2a3147;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, Consolas, monospace;
+    min-height: 100vh;
+  }
+  body::before {
+    content: "";
+    position: fixed; inset: 0; pointer-events: none;
+    background: repeating-linear-gradient(
+      0deg,
+      rgba(0,255,159,0.02) 0px,
+      rgba(0,255,159,0.02) 1px,
+      transparent 1px,
+      transparent 3px
+    );
+    z-index: 9999;
+  }
+  body::after {
+    content: "";
+    position: fixed; inset: 0; pointer-events: none;
+    background: radial-gradient(ellipse at center, transparent 50%, rgba(0,0,0,0.5) 100%);
+    z-index: 9998;
+  }
+  .app {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 40px 24px;
+    position: relative;
+    z-index: 1;
+  }
+  header.hero {
+    text-align: center;
+    margin-bottom: 36px;
+  }
+  .hero .top {
+    color: var(--accent2);
+    letter-spacing: 6px;
+    font-size: 12px;
+    margin-bottom: 14px;
+  }
+  .hero h1 {
+    font-size: 52px;
+    letter-spacing: 5px;
+    color: var(--accent);
+    text-shadow: 0 0 24px var(--accent), 0 0 60px rgba(0,255,159,0.3);
+    margin-bottom: 10px;
+  }
+  .hero .sub {
+    color: var(--muted);
+    letter-spacing: 3px;
+    font-size: 13px;
+  }
+  .hero .me { color: var(--accent2); margin-top: 4px; font-size: 12px; letter-spacing: 2px; }
+
+  .totals {
+    display: flex;
+    justify-content: center;
+    gap: 32px;
+    background: var(--card);
+    border: 1px solid var(--accent);
+    box-shadow: 0 0 20px rgba(0,255,159,0.15);
+    padding: 18px 24px;
+    margin: 0 auto 40px;
+    max-width: 700px;
+    border-radius: 4px;
+  }
+  .total-stat { text-align: center; }
+  .total-stat .v { font-size: 28px; color: var(--accent); font-weight: bold; }
+  .total-stat .v.warn { color: var(--warn); text-shadow: 0 0 10px var(--warn); }
+  .total-stat .l { font-size: 10px; color: var(--muted); letter-spacing: 2px; margin-top: 2px; }
+
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 16px;
+    margin-bottom: 40px;
+  }
+  .game {
+    background: var(--card);
+    border: 1px solid var(--accent2);
+    box-shadow: 0 0 12px rgba(0,217,255,0.15);
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    transition: all 0.2s;
+    position: relative;
+  }
+  .game:hover {
+    transform: translateY(-3px);
+    border-color: var(--accent);
+    box-shadow: 0 0 26px rgba(0,255,159,0.3);
+  }
+  .game.done { border-color: var(--accent); background: linear-gradient(135deg, var(--card) 0%, rgba(0,255,159,0.06) 100%); }
+  .game-top { display: flex; justify-content: space-between; align-items: flex-start; }
+  .game-id { font-size: 11px; color: var(--muted); letter-spacing: 2px; }
+  .game-prof { font-size: 11px; color: var(--accent2); letter-spacing: 1px; }
+  .game-name { font-size: 18px; font-weight: 600; line-height: 1.3; color: var(--text); }
+  .game-detail { font-size: 12px; color: var(--muted); line-height: 1.5; font-family: ui-sans-serif, system-ui, sans-serif; }
+  .progress-bar {
+    height: 4px;
+    background: var(--locked);
+    border-radius: 2px;
+    overflow: hidden;
+    margin-top: 6px;
+  }
+  .progress-fill { height: 100%; background: var(--accent); transition: width 0.4s; box-shadow: 0 0 8px var(--accent); }
+  .game-stats {
+    display: flex;
+    gap: 16px;
+    font-size: 12px;
+    color: var(--muted);
+    letter-spacing: 1px;
+  }
+  .game-stats .v { color: var(--accent); font-weight: bold; }
+  .game-stats .v.warn { color: var(--warn); }
+  .game-actions { display: flex; gap: 8px; margin-top: auto; }
+  .btn {
+    background: transparent;
+    border: 2px solid var(--accent);
+    color: var(--accent);
+    padding: 10px 18px;
+    font-family: inherit;
+    font-size: 13px;
+    letter-spacing: 2px;
+    cursor: pointer;
+    text-transform: uppercase;
+    transition: all 0.2s;
+    text-decoration: none;
+    display: inline-block;
+    flex: 1;
+    text-align: center;
+  }
+  .btn:hover { background: var(--accent); color: var(--bg); box-shadow: 0 0 16px var(--accent); }
+  .btn.secondary { border-color: var(--muted); color: var(--muted); flex: 0 0 auto; padding-left: 12px; padding-right: 12px; }
+  .btn.secondary:hover { background: var(--muted); color: var(--bg); box-shadow: none; }
+
+  .boot {
+    background: var(--bg2);
+    border: 1px solid var(--locked);
+    padding: 14px 18px;
+    max-width: 600px;
+    margin: 0 auto 30px;
+    font-size: 11px;
+    color: var(--muted);
+    line-height: 1.7;
+    min-height: 130px;
+  }
+  .boot .ok { color: var(--accent); }
+  .boot .warn { color: var(--warn); }
+
+  footer {
+    text-align: center;
+    color: var(--muted);
+    font-size: 11px;
+    letter-spacing: 1px;
+    margin-top: 60px;
+    padding-bottom: 24px;
+  }
+  footer a { color: var(--accent2); text-decoration: none; }
+  footer a:hover { text-decoration: underline; }
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="hero">
+    <div class="top">POLITECNICO · MILANO · CHEMICAL ENGINEERING</div>
+    <h1>STUDY ARCADE</h1>
+    <div class="sub">EXAM-PREP GAMES · ONE PER COURSE</div>
+    <div class="me">// celiksuakd · pick a plant, clear the rooms.</div>
+  </header>
+
+  <div class="boot" id="boot"></div>
+
+  <div class="totals" id="totals">
+    <div class="total-stat"><div class="v" id="totalCleared">—</div><div class="l">ROOMS CLEARED</div></div>
+    <div class="total-stat"><div class="v" id="totalXp">—</div><div class="l">TOTAL XP</div></div>
+    <div class="total-stat"><div class="v warn" id="totalBest">—</div><div class="l">BEST STREAK</div></div>
+  </div>
+
+  <div class="grid" id="grid"></div>
+
+  <footer>
+    Open source on
+    <a href="https://github.com/celiksuakd" target="_blank">github.com/celiksuakd</a>
+    · single-file HTML games · runs anywhere · saves locally.
+  </footer>
+</div>
+
+<script>
+const GAMES = [
+  {
+    id: 'dcocp',
+    code: 'DCoCP',
+    name: 'Dynamics & Control of Chemical Processes',
+    prof: 'Pelucchi · Y2 Sem 2 · AY 2025/26',
+    rooms: 12,
+    detail: 'Modeling, Laplace, transfer functions, P/PI/PID, stability, Smith predictor, feedforward. Stephanopoulos-based.',
+    saveKey: 'dcocp_challenge_v1',
+    url: 'https://celiksuakd.github.io/dcocp-challenge/',
+    repo: 'https://github.com/celiksuakd/dcocp-challenge'
+  },
+  {
+    id: 'pci',
+    code: 'PCI',
+    name: 'Process Control & Instrumentation',
+    prof: 'Manca · Y2 Sem 1',
+    rooms: 8,
+    detail: 'Sensors, ISA tags, 4–20 mA loops, time-domain feedback, Z–N / Cohen–Coon tuning, valves and Cv, advanced loops.',
+    saveKey: 'pci_challenge_v1',
+    url: 'https://celiksuakd.github.io/pci-challenge/',
+    repo: 'https://github.com/celiksuakd/pci-challenge'
+  },
+  {
+    id: 'petrochem',
+    code: 'PETROCHEM',
+    name: 'Industrial Organic Chemistry',
+    prof: 'Zennaro · Y2 Sem 2 · AY 2024/25',
+    rooms: 14,
+    detail: 'Methanol, steam cracking, BTX, acetic acid, styrene, formaldehyde, MA/PA, VCM. The whole petrochemical value chain.',
+    saveKey: 'organic_chem_challenge_v1',
+    url: 'https://celiksuakd.github.io/organic-chem-challenge/',
+    repo: 'https://github.com/celiksuakd/organic-chem-challenge'
+  }
+];
+
+function loadProgress(key) {
+  try {
+    const raw = localStorage.getItem(key);
+    if (!raw) return null;
+    return JSON.parse(raw);
+  } catch (e) { return null; }
+}
+
+function render() {
+  let totalCleared = 0, totalRooms = 0, totalXp = 0, bestStreak = 0;
+  const grid = document.getElementById('grid');
+  grid.innerHTML = '';
+
+  GAMES.forEach(game => {
+    const p = loadProgress(game.saveKey) || {};
+    const cleared = p.progress ? Object.values(p.progress).filter(r => r.completed).length : 0;
+    const xp = p.totalXp || 0;
+    const best = p.bestStreak || 0;
+    const pct = Math.round(100 * cleared / game.rooms);
+    totalCleared += cleared;
+    totalRooms += game.rooms;
+    totalXp += xp;
+    if (best > bestStreak) bestStreak = best;
+
+    const done = cleared >= game.rooms;
+    const card = document.createElement('div');
+    card.className = 'game' + (done ? ' done' : '');
+    card.innerHTML = `
+      <div class="game-top">
+        <div>
+          <div class="game-id">${game.code}</div>
+          <div class="game-prof">${game.prof}</div>
+        </div>
+        ${done ? '<div class="game-id" style="color: var(--accent);">★ CLEARED</div>' : ''}
+      </div>
+      <div class="game-name">${game.name}</div>
+      <div class="game-detail">${game.detail}</div>
+      <div>
+        <div class="game-stats">
+          <div>ROOMS <span class="v">${cleared}/${game.rooms}</span></div>
+          <div>XP <span class="v">${xp}</span></div>
+          <div>BEST <span class="v warn">×${best}</span></div>
+        </div>
+        <div class="progress-bar"><div class="progress-fill" style="width: ${pct}%"></div></div>
+      </div>
+      <div class="game-actions">
+        <a class="btn" href="${game.url}">▶ ${cleared > 0 ? 'CONTINUE' : 'PLAY'}</a>
+        <a class="btn secondary" href="${game.repo}" target="_blank">SRC</a>
+      </div>
+    `;
+    grid.appendChild(card);
+  });
+
+  document.getElementById('totalCleared').textContent = `${totalCleared}/${totalRooms}`;
+  document.getElementById('totalXp').textContent = totalXp;
+  document.getElementById('totalBest').textContent = `×${bestStreak}`;
+}
+
+function typeBoot() {
+  const lines = [
+    '> arcade.boot --scan_saves',
+    `> games registered: <span class="ok">${GAMES.length}</span>`,
+    '> reading localStorage ......... <span class="ok">OK</span>',
+    '> auth: <span class="ok">celiksuakd@polimi</span>',
+    '> tip: progress carries across visits (same browser). saves are local — no account needed.',
+    '> system <span class="ok">ONLINE</span>.'
+  ];
+  const el = document.getElementById('boot');
+  let i = 0;
+  function next() {
+    if (i >= lines.length) return;
+    const d = document.createElement('div');
+    d.innerHTML = lines[i];
+    el.appendChild(d);
+    i++;
+    setTimeout(next, 160);
+  }
+  next();
+}
+
+render();
+typeBoot();
+</script>
+</body>
+</html>
